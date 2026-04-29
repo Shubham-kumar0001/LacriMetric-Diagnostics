@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LacriMetric Diagnostics | Healthcare Platform</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- Professional Medical Navbar -->
+    <nav class="navbar shadow-sm">
+        <div class="nav-brand" onclick="app.showSection('section-home')">
+            <div class="logo-icon"><i class="fa-solid fa-eye-dropper"></i></div>
+            <div class="brand-text">
+                <span class="fw-bold">LacriMetric</span>
+                <span class="fw-light">Diagnostics</span>
+            </div>
+        </div>
+        <div class="nav-menu">
+            <button class="icon-btn theme-toggle" onclick="app.toggleTheme()">
+                <i class="fa-solid fa-moon" id="theme-icon"></i>
+            </button>
+            <button class="btn btn-outline-primary" id="btn-doc-login" onclick="app.showSection('section-login')">
+                <i class="fa-solid fa-user-doctor"></i> Doctor Login
+            </button>
+            <button class="btn btn-outline-danger d-none" id="btn-doc-logout" onclick="app.logoutDoctor()">
+                <i class="fa-solid fa-right-from-bracket"></i> Logout
+            </button>
+        </div>
+    </nav>
+
+    <main class="container">
+        <!-- Error Banner -->
+        <div id="error-banner" class="alert alert-danger shadow flex-between d-none transition">
+            <span id="error-message"></span>
+            <button class="icon-btn text-danger" onclick="app.hideError()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <!-- Home Section -->
+        <section id="section-home" class="view-section active">
+            <div class="hero slide-up">
+                <div class="hero-content">
+                    <span class="badge badge-primary mb-3">AI Ocular Platform v2.0</span>
+                    <h1 class="display-title">Automated Tear Film & Blink Analysis</h1>
+                    <p class="hero-subtitle">Utilizing advanced Convolutional Neural Networks and Computer Vision to perform clinical-grade preliminary screening for Dry Eye Disease and ocular surface instability.</p>
+                    
+                    <div class="mt-3 mb-4 p-2 glass-card d-inline-block border-primary-light">
+                        <small class="text-primary fw-bold"><i class="fa-solid fa-microchip"></i> AI Model: CNN-based Tear Film Analysis</small><br>
+                        <small class="text-success fw-bold"><i class="fa-solid fa-circle-check"></i> Status: Active</small>
+                    </div>
+
+                    <div class="hero-actions mt-2">
+                        <button class="btn btn-primary btn-lg shadow-hover" onclick="app.showSection('section-method')">
+                            <i class="fa-solid fa-microscope"></i> Start Analysis
+                        </button>
+                    </div>
+                </div>
+                <div class="hero-graphic">
+                    <div class="circle-pulse"></div>
+                    <i class="fa-solid fa-eye text-primary bg-icon"></i>
+                </div>
+            </div>
+        </section>
+
+        <!-- Doctor Login -->
+        <section id="section-login" class="view-section">
+            <div class="card login-card mx-auto slide-up shadow">
+                <div class="text-center mb-4">
+                    <div class="avatar-circle"><i class="fa-solid fa-stethoscope"></i></div>
+                    <h2 class="mt-3">Doctor Portal Access</h2>
+                    <p class="text-muted">Securely view patient analysis reports.</p>
+                </div>
+                <div class="form-group mb-3">
+                    <label class="form-label">Practitioner ID (Username)</label>
+                    <div class="input-icon">
+                        <i class="fa-solid fa-user"></i>
+                        <input type="text" id="login-user" class="form-control" placeholder="Admin Hint: admin">
+                    </div>
+                </div>
+                <div class="form-group mb-4">
+                    <label class="form-label">Password</label>
+                    <div class="input-icon">
+                        <i class="fa-solid fa-lock"></i>
+                        <input type="password" id="login-pass" class="form-control" placeholder="Admin Hint: password123">
+                    </div>
+                </div>
+                <p id="login-error" class="text-danger small fw-bold d-none text-center mb-3"></p>
+                <button class="btn btn-primary w-100 btn-lg shadow" onclick="app.loginDoctor()" id="btn-login-submit">Authenticate</button>
+            </div>
+        </section>
+
+        <!-- Doctor Dashboard -->
+        <section id="section-dashboard" class="view-section">
+            <div class="flex-between align-items-center mb-4 slide-up">
+                <h2><i class="fa-solid fa-clipboard-list text-primary"></i> Patient Diagnostics Dashboard</h2>
+                <button class="icon-btn text-muted" onclick="app.fetchReports()" title="Refresh"><i class="fa-solid fa-rotate-right"></i></button>
+            </div>
+            <div class="card shadow slide-up delay-1">
+                <div class="table-responsive">
+                    <table class="table w-100" id="reports-table">
+                        <thead>
+                            <tr>
+                                <th>Scan ID</th>
+                                <th>Overall Status</th>
+                                <th>Blink Rate</th>
+                                <th>CNN Model Output</th>
+                                <th>Risk Level</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reports-tbody">
+                            <!-- Injected by JS -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="reports-empty" class="text-center p-5 text-muted d-none">
+                    <i class="fa-solid fa-folder-open fa-3x mb-3 opacity-50"></i>
+                    <p>No reports generated yet.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Method Selection -->
+        <section id="section-method" class="view-section">
+            <div class="text-center mb-5 slide-up">
+                <h2>Select Input Modality</h2>
+                <p class="text-muted">Choose how you would like to provide the ocular video stream.</p>
+            </div>
+            
+            <div class="grid-2 slide-up delay-1">
+                <div class="card card-hoverable method-card" onclick="app.showSection('section-upload')">
+                    <div class="card-icon text-primary"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+                    <h3>Upload Video File</h3>
+                    <p class="text-muted">Import a pre-recorded standard clinical eye examination video.</p>
+                </div>
+                <div class="card card-hoverable method-card" onclick="app.showSection('section-camera')">
+                    <div class="card-icon text-secondary"><i class="fa-solid fa-video"></i></div>
+                    <h3>Live System Camera</h3>
+                    <p class="text-muted">Stream directly from the attached webcam for real-time capture.</p>
+                </div>
+            </div>
+            <div class="text-center mt-5 slide-up delay-2">
+                <button class="btn btn-outline" onclick="app.showSection('section-home')"><i class="fa-solid fa-arrow-left"></i> Return Home</button>
+            </div>
+        </section>
+
+        <!-- Upload Video -->
+        <section id="section-upload" class="view-section">
+            <div class="text-center mb-4 slide-up">
+                <h2><i class="fa-solid fa-cloud-arrow-up text-primary"></i> Upload Clinical Video</h2>
+            </div>
+            <div class="card p-0 shadow overflow-hidden slide-up delay-1 mx-auto" style="max-width: 600px;">
+                <div class="upload-zone p-5 text-center" id="upload-zone">
+                    <input type="file" id="video-input" accept="video/mp4,video/webm,video/*" hidden onchange="app.handleVideoUpload(event)">
+                    <label for="video-input" class="upload-label cursor-pointer w-100 mb-0">
+                        <i class="fa-solid fa-file-video fa-4x text-muted mb-3"></i>
+                        <h4 class="mb-1 text-main">Click to browse files</h4>
+                        <p class="text-muted small">Supported formats: MP4, WEBM</p>
+                    </label>
+                </div>
+                <div class="video-preview-wrapper bg-dark d-none" id="upload-preview-wrapper">
+                    <video id="upload-preview" class="w-100" controls></video>
+                </div>
+                <div class="card-footer p-3 bg-light flex-between edit-footer">
+                    <button class="btn btn-outline btn-sm" onclick="app.resetUpload(); app.showSection('section-method')">Cancel</button>
+                    <button class="btn btn-primary" id="btn-submit-upload" disabled onclick="app.startAnalysisFlow()"><i class="fa-solid fa-bolt"></i> Run Analysis</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Live Camera -->
+        <section id="section-camera" class="view-section">
+            <div class="text-center mb-4 slide-up">
+                <h2><i class="fa-solid fa-video text-secondary"></i> Live Optical Capture</h2>
+                <p class="text-muted small">Look directly at the camera and blink naturally for accuracy.</p>
+            </div>
+            
+            <div class="card shadow p-3 mx-auto slide-up delay-1" style="max-width: 700px;">
+                <div class="camera-wrapper bg-dark border-radius-sm position-relative overflow-hidden mb-3 flex-center">
+                    <div id="camera-placeholder" class="text-center text-muted">
+                        <i class="fa-solid fa-camera fa-3x mb-2"></i>
+                        <p>Camera Ready</p>
+                    </div>
+                    <video id="live-video" autoplay muted playsinline class="w-100 h-100 object-fit-cover d-none"></video>
+                    
+                    <!-- Recording Indicator Overlay -->
+                    <div id="recording-overlay" class="position-absolute top-0 end-0 p-3 d-none">
+                        <div class="badge bg-danger pulse-danger"><i class="fa-solid fa-circle"></i> REC <span id="rec-time">00:00</span></div>
+                    </div>
+                </div>
+
+                <div class="camera-controls flex-center gap-2">
+                    <button class="btn btn-outline" onclick="app.stopCamera(); app.showSection('section-method')">Cancel</button>
+                    <button class="btn btn-secondary w-50" id="btn-start-camera" onclick="app.startCamera()">
+                        <i class="fa-solid fa-power-off"></i> Initialize Camera
+                    </button>
+                    <button class="btn btn-danger w-50 d-none" id="btn-start-record" onclick="app.startRecording()">
+                        <i class="fa-solid fa-circle"></i> Start Recording
+                    </button>
+                    <button class="btn btn-warning w-50 d-none" id="btn-stop-record" onclick="app.stopRecording()">
+                        <i class="fa-solid fa-stop"></i> Stop Recording
+                    </button>
+                    <button class="btn btn-primary w-50 d-none" id="btn-submit-record" onclick="app.startAnalysisFlow()">
+                        <i class="fa-solid fa-bolt"></i> Analyze Recording
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Processing Flow (Animated) -->
+        <section id="section-processing" class="view-section text-center">
+            <div class="processing-card card mx-auto shadow slide-up p-5" style="max-width: 500px;">
+                <div class="loader-ring mx-auto mb-4"></div>
+                <h3 class="mb-2 text-main">System Processing...</h3>
+                <p id="processing-step" class="text-muted fw-500 mb-4">Initializing AI Engine...</p>
+                
+                <div class="progress-container w-100 bg-light border-radius-sm overflow-hidden" style="height: 10px;">
+                    <div id="processing-bar" class="progress-bar bg-primary transition" style="width: 0%; height: 100%;"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Medical Report Dashboard -->
+        <section id="section-results" class="view-section">
+            <!-- Report Header -->
+            <div class="flex-between align-items-center mb-4 slide-up">
+                <div>
+                    <h2 class="m-0"><i class="fa-solid fa-file-medical text-primary"></i> Clinical Analysis Report</h2>
+                    <p class="text-muted small mt-1 m-0">Automated tear film & blink pattern analysis powered by CNN</p>
+                </div>
+                <button class="btn btn-primary btn-sm shadow" onclick="window.print()"><i class="fa-solid fa-download"></i> Download Report</button>
+            </div>
+
+            <!-- Final Diagnosis Highlight Box -->
+            <div class="card shadow-lg text-center mb-4 slide-up" id="final-diagnosis-box" style="padding: 28px; border-left: 5px solid var(--success); background: var(--success-bg);">
+                <div class="flex-center gap-2 mb-2">
+                    <span id="diag-icon" style="font-size: 2rem;">✔️</span>
+                    <h2 class="m-0 fw-bold" style="font-size: 1.6rem;">Final Diagnosis: <span id="diag-result">--</span></h2>
+                </div>
+                <p class="m-0 fw-500" id="diag-risk-label" style="font-size: 1rem; color: var(--success);">
+                    Severity: <span id="diag-severity-text" class="fw-bold">--</span>
+                </p>
+            </div>
+
+            <!-- Two Main Cards -->
+            <div class="grid-2 mb-4 slide-up delay-1">
+
+                <!-- LEFT: Eye Blink Analysis -->
+                <div class="card shadow-lg h-100" style="padding: 28px; border-radius: 16px; border-top: 4px solid var(--secondary);">
+                    <div class="flex-between align-items-center mb-3">
+                        <h4 class="m-0"><i class="fa-regular fa-eye text-secondary"></i> Eye Blink Analysis</h4>
+                        <span id="blink-badge" class="badge badge-primary" style="font-size: 0.8rem;">--</span>
+                    </div>
+
+                    <!-- Blink Metrics Grid -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 18px;">
+                        <div class="card" style="padding: 14px; text-align: center; background: var(--bg-main); border-radius: 10px;">
+                            <p class="text-muted small m-0 fw-500">Total Blinks</p>
+                            <h3 id="res-blink-count" class="m-0 display-value" style="font-size: 2rem; color: var(--secondary);">--</h3>
+                            <p class="text-muted small m-0">blinks detected</p>
+                        </div>
+                        <div class="card" style="padding: 14px; text-align: center; background: var(--bg-main); border-radius: 10px;">
+                            <p class="text-muted small m-0 fw-500">Blink Rate</p>
+                            <h3 id="res-blink-rate" class="m-0 display-value" style="font-size: 2rem; color: var(--secondary);">--</h3>
+                            <p class="text-muted small m-0">blinks/min</p>
+                        </div>
+                        <div class="card" style="padding: 14px; text-align: center; background: var(--bg-main); border-radius: 10px;">
+                            <p class="text-muted small m-0 fw-500">Duration</p>
+                            <h3 id="res-duration" class="m-0 display-value" style="font-size: 2rem; color: var(--text-main);">--</h3>
+                            <p class="text-muted small m-0">seconds</p>
+                        </div>
+                        <div class="card" style="padding: 14px; text-align: center; background: var(--bg-main); border-radius: 10px;">
+                            <p class="text-muted small m-0 fw-500">Avg Interval</p>
+                            <h3 id="res-blink-interval" class="m-0 display-value" style="font-size: 2rem; color: var(--text-main);">--</h3>
+                            <p class="text-muted small m-0">sec/blink</p>
+                        </div>
+                    </div>
+
+                    <!-- Blink Efficiency Status -->
+                    <div class="mb-3">
+                        <div class="flex-between small mb-1">
+                            <span class="fw-bold">Efficiency Status</span>
+                            <span id="res-blink-status" class="fw-bold text-secondary">--</span>
+                        </div>
+                        <div style="height: 8px; border-radius: 4px; overflow: hidden; background: var(--bg-main);">
+                            <div id="blink-bar" style="height: 100%; width: 0%; border-radius: 4px; background: var(--secondary); transition: width 1s ease;"></div>
+                        </div>
+                        <div class="flex-between small text-muted mt-1">
+                            <span>0</span>
+                            <span>Optimal: 15-20</span>
+                            <span>40+</span>
+                        </div>
+                    </div>
+
+                    <!-- Interpretation -->
+                    <div style="background: var(--bg-main); border-radius: 10px; padding: 12px 15px; border-left: 3px solid var(--secondary);">
+                        <p class="small m-0" id="blink-interpretation"><i class="fa-solid fa-info-circle text-secondary"></i> <em>Blink analysis interpretation will appear here after processing.</em></p>
+                    </div>
+                </div>
+
+                <!-- RIGHT: Tear Film Analysis (AI) -->
+                <div class="card shadow-lg h-100 report-card" style="padding: 28px; border-radius: 16px; border-top: 4px solid var(--primary);">
+                    <div class="flex-between align-items-center mb-3">
+                        <h4 class="m-0"><i class="fa-solid fa-microchip text-primary"></i> Tear Film Analysis (AI)</h4>
+                        <span id="cnn-badge" class="badge badge-primary" style="font-size: 0.8rem;">CNN Model</span>
+                    </div>
+
+                    <!-- Large Result Display -->
+                    <div class="text-center mb-4" id="cnn-result-box" style="padding: 20px; background: var(--bg-main); border-radius: 12px; transition: all 0.3s;">
+                        <p class="text-muted small m-0 fw-500 mb-1">CNN Prediction Result</p>
+                        <h2 id="res-cnn" class="m-0 display-value" style="font-size: 2.8rem;">--</h2>
+                        <p class="small text-muted m-0 mt-1">Based on <span id="res-eye-samples">--</span> eye frame samples</p>
+                    </div>
+
+                    <!-- Confidence Display -->
+                    <div class="mb-3">
+                        <div class="flex-between small mb-1">
+                            <span class="fw-bold">AI Confidence</span>
+                            <span id="res-conf" class="fw-bold text-primary">--%</span>
+                        </div>
+                        <div style="height: 8px; border-radius: 4px; overflow: hidden; background: var(--bg-main);">
+                            <div id="res-conf-bar" style="height: 100%; width: 0%; border-radius: 4px; background: var(--primary); transition: width 1s ease;"></div>
+                        </div>
+                        <div class="flex-between small text-muted mt-1">
+                            <span>Low</span>
+                            <span>Medium</span>
+                            <span>High</span>
+                        </div>
+                    </div>
+
+                    <!-- Confidence Level Label -->
+                    <div class="text-center mb-3">
+                        <span id="conf-level-badge" class="badge badge-primary badge-lg">-- Confidence</span>
+                    </div>
+
+                    <!-- CNN Detailed Breakdown -->
+                    <div class="mb-3">
+                        <p class="small fw-bold mb-2"><i class="fa-solid fa-list-check text-primary"></i> Feature Analysis Breakdown:</p>
+                        <ul class="styled-list mb-0" id="cnn-details-list" style="font-size: 0.82rem;">
+                            <li><em>Processing...</em></li>
+                        </ul>
+                    </div>
+
+                    <!-- CNN Interpretation -->
+                    <div class="cnn-interp-box" style="background: var(--bg-main); border-radius: 10px; padding: 14px 16px; border-left: 3px solid var(--primary); transition: all 0.3s;">
+                        <p class="small m-0" id="cnn-interpretation"><i class="fa-solid fa-brain text-primary"></i> <em>CNN detects anomalies based on deviation from learned normal tear film patterns (texture, smoothness, reflection).</em></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recommendations & Medicines - 2 cards -->
+            <div class="grid-2 slide-up delay-2 mb-4">
+                <div class="card shadow-lg h-100 report-card" style="padding: 28px; border-radius: 16px;">
+                    <h4 class="mb-3 border-bottom pb-2"><i class="fa-solid fa-clipboard-check text-primary"></i> Medical Recommendations</h4>
+                    <ul class="styled-list mb-0" id="res-recommendations">
+                        <!-- JS inject -->
+                    </ul>
+                </div>
+
+                <div class="card shadow-lg h-100 report-card" style="padding: 28px; border-radius: 16px; background: var(--primary-bg); border: 1px solid var(--primary);">
+                    <h4 class="mb-3 border-bottom border-primary-light pb-2"><i class="fa-solid fa-pills text-primary"></i> Medicines & Treatments</h4>
+                    <ul class="styled-list no-bg mb-3" id="res-medicines">
+                        <!-- JS inject -->
+                    </ul>
+                    <div id="medicines-empty" class="text-center text-muted small p-3 d-none">
+                        <i class="fa-solid fa-circle-check text-success"></i> No medication required — eyes are healthy!
+                    </div>
+                    <div class="alert alert-warning m-0 p-3 small" style="border-radius: 10px;">
+                        <i class="fa-solid fa-triangle-exclamation" style="margin-right: 8px;"></i>
+                        <strong>Important:</strong> This is not a medical prescription. Always consult a certified ophthalmologist for diagnosis and treatment.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lifestyle Suggestions Section -->
+            <div class="slide-up delay-3 mb-4">
+                <div class="card shadow-lg report-card" style="padding: 28px; border-radius: 16px;">
+                    <h4 class="mb-3 border-bottom pb-2"><i class="fa-solid fa-heart-pulse text-secondary"></i> Lifestyle & Prevention Tips</h4>
+                    <div class="grid-2" id="suggestions-grid">
+                        <!-- JS inject suggestion cards -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center mt-5 slide-up delay-3">
+                <p class="text-muted small mb-3"><i class="fa-solid fa-shield-halved"></i> This system is for demonstration purposes only. Consult a medical professional for diagnosis.</p>
+                <button class="btn btn-primary shadow" onclick="app.resetApp()"><i class="fa-solid fa-rotate-left"></i> Start New Session</button>
+            </div>
+        </section>
+
+    </main>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
